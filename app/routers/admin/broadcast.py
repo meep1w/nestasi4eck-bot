@@ -36,18 +36,15 @@ class Segment:
     subscribed: Optional[bool] = None                    # None=все
 
     def pretty(self) -> str:
+        def s3(v, yes="да", no="нет"):
+            return "любой" if v is None else (yes if v else no)
         parts: List[str] = []
-        if self.langs:
-            parts.append("языки: " + ",".join(sorted(self.langs)))
-        if self.registered is not None:
-            parts.append("регистрация: " + ("да" if self.registered else "нет"))
-        if self.access_ok is not None:
-            parts.append("доступ: " + ("да" if self.access_ok else "нет"))
-        if self.vip is not None:
-            parts.append("VIP: " + ("да" if self.vip else "нет"))
-        if self.subscribed is not None:
-            parts.append("подписка: " + ("да" if self.subscribed else "нет"))
-        return "; ".join(parts) if parts else "все пользователи"
+        parts.append(f"языки: {','.join(sorted(self.langs)) if self.langs else 'все'}")
+        parts.append(f"регистрация: {s3(self.registered)}")
+        parts.append(f"доступ: {s3(self.access_ok)}")
+        parts.append(f"VIP: {s3(self.vip)}")
+        parts.append(f"подписка: {s3(self.subscribed)}")
+        return "; ".join(parts)
 
 
 # ========= Состояния =========
@@ -56,7 +53,7 @@ class BC(StatesGroup):
     picking_segment = State()
     waiting_text = State()
     waiting_media = State()
-    waiting_button = State()   # <- Новый шаг: ввод кнопки
+    waiting_button = State()
     confirming = State()
     broadcasting = State()
 
@@ -105,52 +102,51 @@ async def _render_one(ctx, text: str, kb: InlineKeyboardMarkup, disable_preview:
 # ========= Клавиатуры =========
 
 def _chip(active: bool, label: str, cb: str) -> InlineKeyboardButton:
+    # активный язык помечаем точкой
     dot = "• " if active else ""
     return InlineKeyboardButton(text=f"{dot}{label}", callback_data=cb)
 
+def _tri(val: Optional[bool]) -> str:
+    # для кнопок фильтров: — / ✅ / ❌
+    return "—" if val is None else ("✅" if val else "❌")
 
 def kb_segment(seg: Segment) -> InlineKeyboardMarkup:
+    """
+    Компактный сегмент:
+    [RU][EN]
+    [ES][UK]
+    [📝 Рег: ?][🔓 Доступ: ?]
+    [👑 VIP: ?][📫 Подписка: ?]
+    [➡️ Дальше → Текст]
+    [⬅️ Назад]
+    """
     rows: List[List[InlineKeyboardButton]] = []
 
-    # языки
+    # языки 2×2
+    rows.append([_chip("ru" in seg.langs, "RU", "bc:lang:ru"),
+                 _chip("en" in seg.langs, "EN", "bc:lang:en")])
+    rows.append([_chip("es" in seg.langs, "ES", "bc:lang:es"),
+                 _chip("uk" in seg.langs, "UK", "bc:lang:uk")])
+
+    # бинарные фильтры — циклические
     rows.append([
-        _chip("ru" in seg.langs, "RU", "bc:lang:ru"),
-        _chip("en" in seg.langs, "EN", "bc:lang:en"),
-        _chip("es" in seg.langs, "ES", "bc:lang:es"),
-        _chip("uk" in seg.langs, "UK", "bc:lang:uk"),
+        InlineKeyboardButton(text=f"📝 Рег: {_tri(seg.registered)}", callback_data="bc:cycle:registered"),
+        InlineKeyboardButton(text=f"🔓 Доступ: {_tri(seg.access_ok)}", callback_data="bc:cycle:access"),
+    ])
+    rows.append([
+        InlineKeyboardButton(text=f"👑 VIP: {_tri(seg.vip)}", callback_data="bc:cycle:vip"),
+        InlineKeyboardButton(text=f"📫 Подписка: {_tri(seg.subscribed)}", callback_data="bc:cycle:subs"),
     ])
 
-    # бинарные фильтры
-    rows.append([
-        _chip(seg.registered is True, "Рег ✔", "bc:toggle:registered"),
-        _chip(seg.registered is False, "Рег ✖", "bc:toggle:registered_neg"),
-        InlineKeyboardButton(text="❌", callback_data="bc:clear:registered"),
-    ])
-    rows.append([
-        _chip(seg.access_ok is True, "Доступ ✔", "bc:toggle:access"),
-        _chip(seg.access_ok is False, "Доступ ✖", "bc:toggle:access_neg"),
-        InlineKeyboardButton(text="❌", callback_data="bc:clear:access"),
-    ])
-    rows.append([
-        _chip(seg.vip is True, "VIP ✔", "bc:toggle:vip"),
-        _chip(seg.vip is False, "VIP ✖", "bc:toggle:vip_neg"),
-        InlineKeyboardButton(text="❌", callback_data="bc:clear:vip"),
-    ])
-    rows.append([
-        _chip(seg.subscribed is True, "Подписка ✔", "bc:toggle:subs"),
-        _chip(seg.subscribed is False, "Подписка ✖", "bc:toggle:subs_neg"),
-        InlineKeyboardButton(text="❌", callback_data="bc:clear:subs"),
-    ])
-
-    rows.append([InlineKeyboardButton(text="Дальше → Текст", callback_data="bc:next:text")])
+    rows.append([InlineKeyboardButton(text="➡️ Дальше → Текст", callback_data="bc:next:text")])
     rows.append([InlineKeyboardButton(text="⬅️ Назад", callback_data="admin:back")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def kb_text_stage() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Добавить картинку (по желанию)", callback_data="bc:add:media")],
-        [InlineKeyboardButton(text="Дальше → Кнопка", callback_data="bc:next:button")],
+        [InlineKeyboardButton(text="🖼 Добавить картинку (опционально)", callback_data="bc:add:media")],
+        [InlineKeyboardButton(text="➡️ Дальше → Кнопка", callback_data="bc:next:button")],
         [InlineKeyboardButton(text="⬅️ Назад к сегменту", callback_data="bc:back:segment")],
     ])
 
@@ -166,7 +162,7 @@ def kb_button_stage() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Пропустить кнопку", callback_data="bc:skip:button")],
         [InlineKeyboardButton(text="⬅️ Назад к тексту", callback_data="bc:back:text")],
-        [InlineKeyboardButton(text="Дальше → Предпросмотр", callback_data="bc:next:preview")],
+        [InlineKeyboardButton(text="➡️ Дальше → Предпросмотр", callback_data="bc:next:preview")],
     ])
 
 
@@ -180,19 +176,26 @@ def kb_preview() -> InlineKeyboardMarkup:
     ])
 
 
-def _kb_user_button(text: str, url: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=text, url=url)]
-    ])
+def _kb_user_button(text: Optional[str], url: Optional[str]) -> Optional[InlineKeyboardMarkup]:
+    if not (text and url):
+        return None
+    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=text, url=url)]])
 
 
 # ========= Утилиты сегмента =========
 
 def _fmt_segment(seg: Segment) -> str:
+    def label(v):
+        return "любой" if v is None else ("✅ да" if v else "❌ нет")
+    langs = (",".join(sorted(seg.langs)) if seg.langs else "все")
     return (
         "<b>📣 Новая рассылка</b>\n\n"
-        f"<b>Сегмент:</b> {seg.pretty()}\n\n"
-        "Выбери фильтры выше и нажми «Дальше → Текст»."
+        f"🌍 Языки: <b>{langs}</b>\n"
+        f"📝 Регистрация: <b>{label(seg.registered)}</b>\n"
+        f"🔓 Доступ: <b>{label(seg.access_ok)}</b>\n"
+        f"👑 VIP: <b>{label(seg.vip)}</b>\n"
+        f"📫 Подписка: <b>{label(seg.subscribed)}</b>\n\n"
+        "Выбери фильтры и нажми «Дальше → Текст»."
     )
 
 
@@ -291,6 +294,7 @@ async def enter_broadcast(call: CallbackQuery, state: FSMContext):
     await state.clear()
     seg = Segment()
     await state.update_data(seg=seg, text=None, media=None, btn_text=None, btn_url=None)
+    await state.set_state(BC.picking_segment)
     await call.answer()
     await _render_one(call, _fmt_segment(seg), kb_segment(seg))
 
@@ -309,47 +313,27 @@ async def toggle_lang(call: CallbackQuery, state: FSMContext):
     await _render_one(call, _fmt_segment(seg), kb_segment(seg))
 
 
-@router.callback_query(F.data.startswith("bc:toggle:"))
-async def toggle_bools(call: CallbackQuery, state: FSMContext):
+@router.callback_query(F.data.startswith("bc:cycle:"))
+async def cycle_filter(call: CallbackQuery, state: FSMContext):
+    """
+    Цикл значений: None -> True -> False -> None
+    """
     key = call.data.split(":", 2)[2]
     data = await state.get_data()
     seg: Segment = data.get("seg") or Segment()
 
-    if key == "registered":
-        seg.registered = True
-    elif key == "registered_neg":
-        seg.registered = False
+    curr = getattr(seg, key if key != "subs" else "subscribed")
+    nxt = True if curr is None else (False if curr is True else None)
+
+    if key == "subs":
+        seg.subscribed = nxt
+    elif key == "registered":
+        seg.registered = nxt
     elif key == "access":
-        seg.access_ok = True
-    elif key == "access_neg":
-        seg.access_ok = False
+        seg.access_ok = nxt
     elif key == "vip":
-        seg.vip = True
-    elif key == "vip_neg":
-        seg.vip = False
-    elif key == "subs":
-        seg.subscribed = True
-    elif key == "subs_neg":
-        seg.subscribed = False
+        seg.vip = nxt
 
-    await state.update_data(seg=seg)
-    await call.answer()
-    await _render_one(call, _fmt_segment(seg), kb_segment(seg))
-
-
-@router.callback_query(F.data.startswith("bc:clear:"))
-async def clear_filter(call: CallbackQuery, state: FSMContext):
-    key = call.data.split(":", 2)[2]
-    data = await state.get_data()
-    seg: Segment = data.get("seg") or Segment()
-    if key == "registered":
-        seg.registered = None
-    elif key == "access":
-        seg.access_ok = None
-    elif key == "vip":
-        seg.vip = None
-    elif key == "subs":
-        seg.subscribed = None
     await state.update_data(seg=seg)
     await call.answer()
     await _render_one(call, _fmt_segment(seg), kb_segment(seg))
@@ -364,7 +348,7 @@ async def proceed_to_text(call: CallbackQuery, state: FSMContext):
     await call.answer()
     await _render_one(
         call,
-        f"<b>Текст сообщения</b>\n\nАудитория: <b>{n}</b>\n\nПришли текст (HTML разрешён).",
+        f"<b>Текст сообщения</b>\n\nАудитория (оценка): <b>{n}</b>\n\nПришли текст (HTML разрешён).",
         kb_text_stage(),
     )
 
@@ -482,18 +466,16 @@ async def do_preview(call: CallbackQuery, state: FSMContext):
     n = await _count_audience(seg)
     await state.set_state(BC.confirming)
 
-    # экран инфо
     info = (
         "<b>Предпросмотр</b>\n\n"
         f"Сегмент: {seg.pretty()}\n"
-        f"Аудитория: <b>{n}</b>\n"
+        f"Аудитория (оценка): <b>{n}</b>\n"
         f"Кнопка: {'есть' if btxt and burl else 'нет'}\n\n"
         "Ниже — как получит пользователь:"
     )
     await _render_one(call, info, kb_preview())
 
-    # предпросмотр отдельным сообщением (не пишем last_id)
-    markup = _kb_user_button(btxt, burl) if (btxt and burl) else None
+    markup = _kb_user_button(btxt, burl)
     if media:
         await call.message.answer_photo(media, caption=txt, reply_markup=markup)
     else:
@@ -504,7 +486,7 @@ async def do_preview(call: CallbackQuery, state: FSMContext):
 
 async def _send_to_user(bot, uid: int, txt: str, media: Optional[str], btn_text: Optional[str], btn_url: Optional[str]) -> bool:
     try:
-        markup = _kb_user_button(btn_text, btn_url) if (btn_text and btn_url) else None
+        markup = _kb_user_button(btn_text, btn_url)
         if media:
             await bot.send_photo(uid, media, caption=txt, reply_markup=markup)
         else:
@@ -548,8 +530,8 @@ async def start_broadcast(call: CallbackQuery, state: FSMContext):
 
     sent = 0
     ok = 0
-    batch = 25   # шлём пачками
-    pause = 1.0  # пауза между пачками
+    batch = 25
+    pause = 1.0
 
     for i in range(0, total, batch):
         chunk = ids[i:i + batch]
@@ -570,7 +552,6 @@ async def start_broadcast(call: CallbackQuery, state: FSMContext):
             pass
         await asyncio.sleep(pause)
 
-    # финал — очистим состояние, чтобы каждая рассылка была «с нуля»
     await state.clear()
     await _render_one(call, f"Готово ✅\nУспешно: {ok}\nНе доставлено: {total - ok}", InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="admin:back")]

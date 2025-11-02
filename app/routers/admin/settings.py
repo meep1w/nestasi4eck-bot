@@ -27,41 +27,44 @@ def _view_settings() -> str:
     ch_view = f"<code>{ch}</code>" if ch is not None else "—"
 
     return (
-        "⚙️ <b>Настройки доступа</b>\n\n"
+        "🛠️ <b>Настройки доступа</b>\n\n"
         f"• Требовать подписку: <b>{_onoff(settings.REQUIRE_SUBSCRIPTION)}</b>\n"
         f"• Требовать депозит: <b>{_onoff(settings.REQUIRE_DEPOSIT)}</b>\n"
         f"• Канал (ID): {ch_view}\n\n"
         f"• Порог доступа (ACCESS): <b>{int(settings.ACCESS_THRESHOLD_USD)}$</b>\n"
         f"• Порог VIP: <b>{int(settings.VIP_THRESHOLD_USD)}$</b>\n\n"
+        "🔗 <b>Ссылки</b>\n"
         f"• Реф. ссылка: <code>{settings.REF_LINK}</code>\n"
         f"• Мини-апп (обычный): <code>{settings.MINIAPP_LINK_REGULAR}</code>\n"
         f"• Мини-апп (VIP): <code>{settings.MINIAPP_LINK_VIP}</code>\n"
         f"• Поддержка: <code>{settings.SUPPORT_URL}</code>\n"
-        f"• Ссылка на канал подписки: <code>{settings.SUB_CHANNELS_URL}</code>\n"
+        f"• Ссылка на канал: <code>{settings.SUB_CHANNELS_URL}</code>\n"
     )
 
 
 def _kb() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text=f"Подписка: {_onoff(settings.REQUIRE_SUBSCRIPTION)}", callback_data="admin:toggle:sub"),
-            InlineKeyboardButton(text=f"Депозит: {_onoff(settings.REQUIRE_DEPOSIT)}",       callback_data="admin:toggle:dep"),
-        ],
-        [InlineKeyboardButton(text="Канал (ID)",       callback_data="admin:set:channel")],
-        [
-            InlineKeyboardButton(text="ACCESS $",       callback_data="admin:set:access"),
-            InlineKeyboardButton(text="VIP $",          callback_data="admin:set:vip"),
-        ],
-        [InlineKeyboardButton(text="REF_LINK",         callback_data="admin:set:ref")],
-        [
-            InlineKeyboardButton(text="MINIAPP REG",    callback_data="admin:set:mini_reg"),
-            InlineKeyboardButton(text="MINIAPP VIP",    callback_data="admin:set:mini_vip"),
+            InlineKeyboardButton(text=f"📫 Подписка: {_onoff(settings.REQUIRE_SUBSCRIPTION)}", callback_data="admin:toggle:sub"),
+            InlineKeyboardButton(text=f"💳 Депозит: {_onoff(settings.REQUIRE_DEPOSIT)}",       callback_data="admin:toggle:dep"),
         ],
         [
-            InlineKeyboardButton(text="SUPPORT_URL",    callback_data="admin:set:support"),
-            InlineKeyboardButton(text="SUB_URL",        callback_data="admin:set:suburl"),
+            InlineKeyboardButton(text="🆔 Канал ID",           callback_data="admin:set:channel"),
+            InlineKeyboardButton(text="🔗 Канал URL",          callback_data="admin:set:suburl"),
         ],
-        [InlineKeyboardButton(text="⬅️ Назад",         callback_data="admin:back")],
+        [
+            InlineKeyboardButton(text="📉 Мин. деп",           callback_data="admin:set:access"),
+            InlineKeyboardButton(text="👑 Порог ВИП",          callback_data="admin:set:vip"),
+        ],
+        [
+            InlineKeyboardButton(text="📱 Мини-апп",           callback_data="admin:set:mini_reg"),
+            InlineKeyboardButton(text="📱👑 ВИП мини-апп",      callback_data="admin:set:mini_vip"),
+        ],
+        [
+            InlineKeyboardButton(text="🔁 Рев ссылка",         callback_data="admin:set:ref"),
+            InlineKeyboardButton(text="🛟 Ссылка поддержки",    callback_data="admin:set:support"),
+        ],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="admin:back")],
     ])
 
 
@@ -131,7 +134,12 @@ async def ask_suburl(call: CallbackQuery):
 
 
 # === TEXT INPUT SAVE ===
-@router.message(F.text)
+# ВАЖНО: фильтруем, чтобы перехватывать текст ТОЛЬКО когда ждём ввода для настроек,
+# иначе мы мешаем рассылке (BC.waiting_text)
+@router.message(
+    F.text,
+    F.func(lambda m: getattr(m, "from_user", None) is not None and m.from_user.id in _pending)
+)
 async def save_value(message: Message):
     key = _pending.pop(message.from_user.id, None)
     if not key:
