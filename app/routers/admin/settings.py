@@ -27,7 +27,7 @@ def _view_settings() -> str:
     ch_view = f"<code>{ch}</code>" if ch is not None else "—"
 
     return (
-        "🛠️ <b>Настройки доступа</b>\n\n"
+        "🛠 <b>Настройки доступа</b>\n\n"
         f"• Требовать подписку: <b>{_onoff(settings.REQUIRE_SUBSCRIPTION)}</b>\n"
         f"• Требовать депозит: <b>{_onoff(settings.REQUIRE_DEPOSIT)}</b>\n"
         f"• Канал (ID): {ch_view}\n\n"
@@ -35,36 +35,33 @@ def _view_settings() -> str:
         f"• Порог VIP: <b>{int(settings.VIP_THRESHOLD_USD)}$</b>\n\n"
         "🔗 <b>Ссылки</b>\n"
         f"• Реф. ссылка: <code>{settings.REF_LINK}</code>\n"
-        f"• Мини-апп (обычный): <code>{settings.MINIAPP_LINK_REGULAR}</code>\n"
-        f"• Мини-апп (VIP): <code>{settings.MINIAPP_LINK_VIP}</code>\n"
         f"• Поддержка: <code>{settings.SUPPORT_URL}</code>\n"
         f"• Ссылка на канал: <code>{settings.SUB_CHANNELS_URL}</code>\n"
     )
 
 
 def _kb() -> InlineKeyboardMarkup:
+    """
+    Без мини-аппов. Две кнопки в строке.
+    """
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text=f"📫 Подписка: {_onoff(settings.REQUIRE_SUBSCRIPTION)}", callback_data="admin:toggle:sub"),
+            InlineKeyboardButton(text=f"🪪 Подписка: {_onoff(settings.REQUIRE_SUBSCRIPTION)}", callback_data="admin:toggle:sub"),
             InlineKeyboardButton(text=f"💳 Депозит: {_onoff(settings.REQUIRE_DEPOSIT)}",       callback_data="admin:toggle:dep"),
         ],
         [
-            InlineKeyboardButton(text="🆔 Канал ID",           callback_data="admin:set:channel"),
-            InlineKeyboardButton(text="🔗 Канал URL",          callback_data="admin:set:suburl"),
+            InlineKeyboardButton(text="🆔 Канал ID",   callback_data="admin:set:channel"),
+            InlineKeyboardButton(text="🔗 Канал URL",   callback_data="admin:set:suburl"),
         ],
         [
-            InlineKeyboardButton(text="📉 Мин. деп",           callback_data="admin:set:access"),
-            InlineKeyboardButton(text="👑 Порог ВИП",          callback_data="admin:set:vip"),
+            InlineKeyboardButton(text="💵 Мин. деп",    callback_data="admin:set:access"),
+            InlineKeyboardButton(text="👑 Порог ВИП",   callback_data="admin:set:vip"),
         ],
         [
-            InlineKeyboardButton(text="📱 Мини-апп",           callback_data="admin:set:mini_reg"),
-            InlineKeyboardButton(text="📱👑 ВИП мини-апп",      callback_data="admin:set:mini_vip"),
+            InlineKeyboardButton(text="🔁 Рев ссылка",  callback_data="admin:set:ref"),
+            InlineKeyboardButton(text="🆘 Ссылка поддержки", callback_data="admin:set:support"),
         ],
-        [
-            InlineKeyboardButton(text="🔁 Рев ссылка",         callback_data="admin:set:ref"),
-            InlineKeyboardButton(text="🛟 Ссылка поддержки",    callback_data="admin:set:support"),
-        ],
-        [InlineKeyboardButton(text="⬅️ Назад", callback_data="admin:back")],
+        [InlineKeyboardButton(text="⬅️ Назад",         callback_data="admin:back")],
     ])
 
 
@@ -116,14 +113,6 @@ async def ask_vip(call: CallbackQuery):
 async def ask_ref(call: CallbackQuery):
     await _ask(call, "REF_LINK", "Вставьте новую реферальную ссылку.")
 
-@router.callback_query(F.data == "admin:set:mini_reg")
-async def ask_mini_reg(call: CallbackQuery):
-    await _ask(call, "MINIAPP_LINK_REGULAR", "Ссылка на обычный мини-апп.")
-
-@router.callback_query(F.data == "admin:set:mini_vip")
-async def ask_mini_vip(call: CallbackQuery):
-    await _ask(call, "MINIAPP_LINK_VIP", "Ссылка на VIP мини-апп.")
-
 @router.callback_query(F.data == "admin:set:support")
 async def ask_support(call: CallbackQuery):
     await _ask(call, "SUPPORT_URL", "Ссылка на поддержку.")
@@ -134,12 +123,7 @@ async def ask_suburl(call: CallbackQuery):
 
 
 # === TEXT INPUT SAVE ===
-# ВАЖНО: фильтруем, чтобы перехватывать текст ТОЛЬКО когда ждём ввода для настроек,
-# иначе мы мешаем рассылке (BC.waiting_text)
-@router.message(
-    F.text,
-    F.func(lambda m: getattr(m, "from_user", None) is not None and m.from_user.id in _pending)
-)
+@router.message(F.text)
 async def save_value(message: Message):
     key = _pending.pop(message.from_user.id, None)
     if not key:

@@ -32,28 +32,59 @@ DEFAULT_TEXTS = {
         "fr": "Choisissez la langue",
         "ro": "Alege limba"
     },
-    "screen.menu.title": {"en": "Main menu","ru": "Главное меню","hi":"मुख्य मेनू","ar":"القائمة الرئيسية","es":"Menú principal","fr":"Menu principal", "ro": "Meniu principal"},
-    "screen.menu.desc": {
-        "en": "Tap “Get signal” to pass access checks.",
-        "ru": "Нажмите «Получить сигнал», чтобы пройти проверку доступа.",
-        "hi": "पहुँच जाँच पार करने के लिए “सिग्नल प्राप्त करें” दबाएँ।",
-        "ar": "اضغط «الحصول على الإشارة» لاجتياز فحوصات الوصول.",
-        "es": "Pulsa “Obtener señal” para pasar las comprobaciones.",
-        "fr": "Appuyez sur « Obtenir le signal » pour passer les vérifications d’accès.",
-        "ro": "Apasă „Obține semnal” pentru verificarea accesului."
+
+    # Главное меню — только заголовок, без описания
+    "screen.menu.title": {
+        "en": "Main menu",
+        "ru": "Главное меню",
+        "hi": "मुख्य मेनू",
+        "ar": "القائمة الرئيسية",
+        "es": "Menú principal",
+        "fr": "Menu principal",
+        "ro": "Meniu principal"
     },
-    "btn.get_signal": {"en":"Get signal","ru":"Получить сигнал","hi":"सिग्नल प्राप्त करें","ar":"الحصول على الإشارة","es":"Obtener señal","fr":"Obtenir le signal", "ro": "Obține semnal"},
-    "btn.support": {"en":"Support","ru":"Поддержка","hi":"सपोर्ट","ar":"الدعم","es":"Soporte","fr":"Support","ro": "Asistență"},
+    "screen.menu.desc": {
+        "en": "",
+        "ru": "",
+        "hi": "",
+        "ar": "",
+        "es": "",
+        "fr": "",
+        "ro": ""
+    },
+
+    # Кнопки
+    "btn.get_signal": {
+        "en": "📡 Get signal",
+        "ru": "📡 Получить сигнал",
+        "hi": "📡 सिग्नल प्राप्त करें",
+        "ar": "📡 الحصول على الإشارة",
+        "es": "📡 Obtener señal",
+        "fr": "📡 Obtenir le signal",
+        "ro": "📡 Obține semnal"
+    },
+    "btn.support": {
+        "en": "🛟 Support",
+        "ru": "🛟 Поддержка",
+        "hi": "🛟 सहायता",
+        "ar": "🛟 الدعم",
+        "es": "🛟 Soporte",
+        "fr": "🛟 Support",
+        "ro": "🛟 Asistență"
+    },
+
+    # Help (локализовано; команды остаются как есть)
     "help.text": {
-        "en": "Commands:\n/lang — change language\n/menu — open main menu\n/help — help",
-        "ru": "Команды:\n/lang — смена языка\n/menu — открыть главное меню\n/help — помощь",
-        "hi": "Commands:\n/lang — भाषा बदलें\n/menu — मुख्य меню\n/help — помощь",
-        "ar": "Commands:\n/lang — تغيير اللغة\n/menu — القائمة الرئيسية\n/help — help",
-        "es": "Comandos:\n/lang — cambiar idioma\n/menu — abrir menú principal\n/help — ayuda",
-        "fr": "Commandes :\n/lang — changer la langue\n/menu — ouvrir le menu\n/help — aide",
-        "ro": "Comenzi:\n/lang — schimbă limba\n/menu — deschide meniul principal\n/help — ajutor",
+        "en": "Commands:\n/lang — change language 🌐\n/menu — open main menu 🏠\n/help — show help ❓",
+        "ru": "Команды:\n/lang — сменить язык 🌐\n/menu — открыть главное меню 🏠\n/help — показать помощь ❓",
+        "hi": "कमांड्स:\n/lang — भाषा बदलें 🌐\n/menu — मुख्य मेनू खोलें 🏠\n/help — सहायता दिखाएँ ❓",
+        "ar": "الأوامر:\n/lang — تغيير اللغة 🌐\n/menu — فتح القائمة الرئيسية 🏠\n/help — عرض المساعدة ❓",
+        "es": "Comandos:\n/lang — cambiar idioma 🌐\n/menu — abrir menú principal 🏠\n/help — mostrar ayuda ❓",
+        "fr": "Commandes :\n/lang — changer la langue 🌐\n/menu — ouvrir le menu principal 🏠\n/help — afficher l’aide ❓",
+        "ro": "Comenzi:\n/lang — schimbă limba 🌐\n/menu — deschide meniul principal 🏠\n/help — afișează ajutorul ❓"
     },
 }
+
 
 
 def t(lang: str, key: str) -> str:

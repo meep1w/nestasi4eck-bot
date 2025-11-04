@@ -47,29 +47,74 @@ _text_cache = {code: load_lang(code, I18N_DIR) for code in SUPPORTED_LANGS}
 
 DEFAULT_TEXTS = {
     "screen.language.title": {
-        "en": "Choose language","ru": "Выберите язык","hi": "भाषा चुनें","ar": "اختر اللغة","es": "Elige idioma","fr": "Choisissez la langue","ro": "Alege limba",
+        "en": "🌐 Choose language",
+        "ru": "🌐 Выберите язык",
+        "hi": "🌐 भाषा चुनें",
+        "ar": "🌐 اختر اللغة",
+        "es": "🌐 Elige idioma",
+        "fr": "🌐 Choisissez la langue",
+        "ro": "🌐 Alege limba",
     },
+
+    # Главное меню — только заголовок, без описания
     "screen.menu.title": {
-        "en": "Main menu","ru": "Главное меню","hi": "मुख्य मेनू","ar": "القائمة الرئيسية","es": "Menú principal","fr": "Menu principal","ro": "Meniu principal",
+        "en": "🏠 Main menu",
+        "ru": "🏠 Главное меню",
+        "hi": "🏠 मुख्य मेनू",
+        "ar": "🏠 القائمة الرئيسية",
+        "es": "🏠 Menú principal",
+        "fr": "🏠 Menu principal",
+        "ro": "🏠 Meniu principal",
     },
     "screen.menu.desc": {
-        "en": "Tap “Get signal” to pass access checks.",
-        "ru": "Нажмите «Получить сигнал», чтобы пройти проверку доступа.",
-        "hi": "पहुँच जाँच पार करने के लिए “सिग्नल प्राप्त करें” दबाएँ।",
-        "ar": "اضغط «الحصول على الإشارة» لاجتياز فحوصات الوصول.",
-        "es": "Pulsa “Obtener señal” para pasar las comprobaciones.",
-        "fr": "Appuyez sur « Obtenir le signal » pour passer les vérifications d’accès.",
-        "ro": "Apasă „Obține semnal” pentru verificarea accesului.",
+        "en": "",
+        "ru": "",
+        "hi": "",
+        "ar": "",
+        "es": "",
+        "fr": "",
+        "ro": "",
     },
+
+    # Кнопки
     "btn.get_signal": {
-        "en": "Get signal","ru": "Получить сигнал","hi": "सिग्नल प्राप्त करें","ar": "الحصول على الإشارة","es": "Obtener señal","fr": "Obtenir le signal","ro": "Obține semnal",
+        "en": "📡 Get signal",
+        "ru": "📡 Получить сигнал",
+        "hi": "📡 सिग्नल प्राप्त करें",
+        "ar": "📡 الحصول على الإشارة",
+        "es": "📡 Obtener señal",
+        "fr": "📡 Obtenir le signal",
+        "ro": "📡 Obține semnal",
     },
     "btn.vip_signals": {
-        "en": "VIP signals","ru": "VIP сигналы","hi": "VIP सिग्नल","ar": "إشارات VIP","es": "Señales VIP","fr": "Signaux VIP","ro": "Semnale VIP",
+        "en": "👑 VIP signals",
+        "ru": "👑 VIP сигналы",
+        "hi": "👑 VIP सिग्नल",
+        "ar": "👑 إشارات VIP",
+        "es": "👑 Señales VIP",
+        "fr": "👑 Signaux VIP",
+        "ro": "👑 Semnale VIP",
     },
-    "btn.support": {"en":"Support","ru":"Поддержка","hi":"सपोर्ट","ar":"الدعم","es":"Soporte","fr":"Support","ro":"Asistență"},
-    "btn.back_menu": {"en":"⬅️ Menu","ru":"⬅️ В меню","hi":"⬅️ मेनू","ar":"⬅️ القائمة","es":"⬅️ Menú","fr":"⬅️ Menu","ro":"⬅️ Meniu"},
+    "btn.support": {
+        "en": "🛟 Support",
+        "ru": "🛟 Поддержка",
+        "hi": "🛟 सहायता",
+        "ar": "🛟 الدعم",
+        "es": "🛟 Soporte",
+        "fr": "🛟 Support",
+        "ro": "🛟 Asistență",
+    },
+    "btn.back_menu": {
+        "en": "⬅️ Menu",
+        "ru": "⬅️ В меню",
+        "hi": "⬅️ मेनू",
+        "ar": "⬅️ القائمة",
+        "es": "⬅️ Menú",
+        "fr": "⬅️ Menu",
+        "ro": "⬅️ Meniu",
+    },
 }
+
 
 def t(lang: str, key: str) -> str:
     lang = lang if lang in SUPPORTED_LANGS else "en"

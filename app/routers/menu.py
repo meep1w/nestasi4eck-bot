@@ -50,7 +50,7 @@ async def render_main_menu(m: Message, lang: str, vip: Optional[bool] = None):
     access_open = (not settings.REQUIRE_DEPOSIT) or (deposit >= settings.ACCESS_THRESHOLD_USD)
     is_vip = bool(getattr(u, "has_vip", False) or deposit >= settings.VIP_THRESHOLD_USD)
 
-    title = "<b>Главное меню</b>\n\nНажмите «Получить сигнал», чтобы пройти проверку доступа."
+    title = "<b>Главное меню</b>"
 
     # --- клавиатура (новая раскладка) ---
     rows = []
