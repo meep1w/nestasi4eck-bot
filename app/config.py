@@ -1,59 +1,89 @@
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+# app/config.py
+from __future__ import annotations
+
+from typing import List, Optional, Iterable
+
+from pydantic import Field, field_validator, model_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # pydantic v2
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
+    # === Telegram ===
+    BOT_TOKEN: str
 
-    # TG / Admin
-    BOT_TOKEN: str = Field(default="")
-    ADMIN_ID: int = Field(default=0)
-    POSTBACK_CHANNEL_ID: int = Field(default=0)
+    # === Admins ===
+    # Новый способ: список админов (через запятую)
+    ADMIN_IDS: List[int] = Field(default_factory=list)
+    # Старый способ: один админ (оставлен для обратной совместимости)
+    ADMIN_ID: Optional[int] = None
 
-    # База (dev: SQLite + aiosqlite)
-    DATABASE_URL: str = Field(default="sqlite+aiosqlite:///./data.db")
-
-    # Пороги доступа
-    ACCESS_THRESHOLD_USD: float = 100.0
-    VIP_THRESHOLD_USD: float = 300.0
-
-    # Флаги шагов
+    # === Access flow flags ===
     REQUIRE_SUBSCRIPTION: bool = True
     REQUIRE_DEPOSIT: bool = True
-    # Регистрацию не отключаем — это константа в логике
 
-    # Подписка — ТЕПЕРЬ ТОЛЬКО ОДИН КАНАЛ
-    # Пример в .env: SUB_CHANNEL_ID=-1001234567890
-    SUB_CHANNEL_ID: int | None = None
+    # === Channels / subscription ===
+    # один ID канала (int, со знаком минус для каналов)
+    SUB_CHANNEL_ID: Optional[int] = None
+    # или несколько id через запятую
+    SUB_CHANNEL_IDS: Optional[str] = None
+    SUB_CHANNELS_URL: str = "https://t.me/"
 
-    # Ссылки
-    REF_LINK: str = Field(default="")
-    MINIAPP_LINK_REGULAR: str = Field(default="https://example.com/regular")
-    MINIAPP_LINK_VIP: str = Field(default="https://example.com/vip")
+    # === Thresholds (USD) ===
+    ACCESS_THRESHOLD_USD: float = 50.0
+    VIP_THRESHOLD_USD: float = 300.0
 
-    # ВАЖНО: ссылки на поддержку и «хаб» подписки
-    SUPPORT_URL: str = Field(default="https://t.me/")      # «🛟 Поддержка»
-    SUB_CHANNELS_URL: str = Field(default="https://t.me/") # «📨 Подписаться» (может вести прямо на канал)
+    # === Links ===
+    REF_LINK: str = "https://example.com"
+    MINIAPP_LINK_REGULAR: str = "https://your-gh-pages/regular"
+    MINIAPP_LINK_VIP: str = "https://your-gh-pages/vip"
+    SUPPORT_URL: str = "https://t.me/"
 
-    # Необязательный лог-канал для карточек постбэков
-    LOG_CHANNEL_ID: int | None = None
+    # === Postback HTTP receiver ===
+    POSTBACK_HTTP_HOST: str = "0.0.0.0"
+    POSTBACK_HTTP_PORT: int = 8080
+    POSTBACK_HTTP_SECRET: str = "YOUR_SECRET"
 
-    # HTTP-приёмник постбэков (aiohttp)
-    POSTBACK_HTTP_HOST: str = Field(default="0.0.0.0")
-    POSTBACK_HTTP_PORT: int = Field(default=8080)
-    POSTBACK_HTTP_SECRET: str | None = None  # если задан, ожидаем &secret=... в запросе
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
-    # Хелпер: один канал подписки или None
-    def sub_channel_id(self) -> int | None:
+
+    @field_validator("ADMIN_IDS", mode="before")
+    @classmethod
+    def _parse_admin_ids(cls, v):
+
+        if v is None or v == "":
+            return []
+        if isinstance(v, (list, tuple)):
+            return [int(x) for x in v]
+        return [int(x.strip()) for x in str(v).split(",") if x.strip()]
+
+    @model_validator(mode="after")
+    def _normalize_admins(self):
+
+        ids = set(self.ADMIN_IDS or [])
+        if self.ADMIN_ID:
+            ids.add(int(self.ADMIN_ID))
+        self.ADMIN_IDS = sorted(ids)
+        return self
+
+    # ---- helpers for codebase ----
+    def is_admin(self, uid: int) -> bool:
         try:
-            return int(self.SUB_CHANNEL_ID) if self.SUB_CHANNEL_ID is not None else None
+            return int(uid) in self.ADMIN_IDS
         except Exception:
-            return None
+            return False
+
+    def sub_channel_id(self) -> Optional[int]:
+        return self.SUB_CHANNEL_ID
+
+    def sub_channel_ids_list(self) -> Iterable[int]:
+
+        if self.SUB_CHANNEL_IDS:
+            return [int(x.strip()) for x in self.SUB_CHANNEL_IDS.split(",") if x.strip()]
+        if self.SUB_CHANNEL_ID is not None:
+            return [int(self.SUB_CHANNEL_ID)]
+        return []
 
 
 settings = Settings()
