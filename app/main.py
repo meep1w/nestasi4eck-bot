@@ -14,6 +14,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
     FSInputFile,
+    WebAppInfo,
 )
 from aiogram.client.default import DefaultBotProperties
 
@@ -39,29 +40,43 @@ router = Router(name=__name__)
 # ==== I18N / IMAGES ====
 I18N_DIR = Path(__file__).parent / "assets" / "i18n"
 IMG_DIR = Path(__file__).parent / "assets" / "images"
-SUPPORTED_LANGS = ("ru", "en", "es", "uk")
 
+# 7 языков: EN, RU, HI, AR, ES, FR, RO
+SUPPORTED_LANGS = ("en", "ru", "hi", "ar", "es", "fr", "ro")
 _text_cache = {code: load_lang(code, I18N_DIR) for code in SUPPORTED_LANGS}
 
 DEFAULT_TEXTS = {
-    "screen.language.title": {"ru": "Выберите язык", "en": "Choose language", "es": "Elige idioma", "uk": "Обери мову"},
-    "screen.menu.title": {"ru": "Главное меню", "en": "Main menu", "es": "Menú principal", "uk": "Головне меню"},
-    "screen.menu.desc": {
-        "ru": "Нажмите «Получить сигнал», чтобы пройти проверку доступа.",
-        "en": "Tap “Get signal” to pass access checks.",
-        "es": "Pulsa “Obtener señal” para pasar las comprobaciones.",
-        "uk": "Натисніть “Отримати сигнал”, щоб пройти перевірки доступу.",
+    "screen.language.title": {
+        "en": "Choose language","ru": "Выберите язык","hi": "भाषा चुनें","ar": "اختر اللغة","es": "Elige idioma","fr": "Choisissez la langue","ro": "Alege limba",
     },
-    "btn.get_signal": {"ru": "Получить сигнал", "en": "Get signal", "es": "Obtener señal", "uk": "Отримати сигнал"},
-    "btn.vip_signals": {"ru": "VIP сигналы", "en": "VIP signals", "es": "Señales VIP", "uk": "VIP сигнали"},
-    "btn.support": {"ru": "Поддержка", "en": "Support", "es": "Soporte", "uk": "Підтримка"},
-    "btn.back_menu": {"ru": "⬅️ В меню", "en": "⬅️ Menu", "es": "⬅️ Menú", "uk": "⬅️ Меню"},
+    "screen.menu.title": {
+        "en": "Main menu","ru": "Главное меню","hi": "मुख्य मेनू","ar": "القائمة الرئيسية","es": "Menú principal","fr": "Menu principal","ro": "Meniu principal",
+    },
+    "screen.menu.desc": {
+        "en": "Tap “Get signal” to pass access checks.",
+        "ru": "Нажмите «Получить сигнал», чтобы пройти проверку доступа.",
+        "hi": "पहुँच जाँच पार करने के लिए “सिग्नल प्राप्त करें” दबाएँ।",
+        "ar": "اضغط «الحصول على الإشارة» لاجتياز فحوصات الوصول.",
+        "es": "Pulsa “Obtener señal” para pasar las comprobaciones.",
+        "fr": "Appuyez sur « Obtenir le signal » pour passer les vérifications d’accès.",
+        "ro": "Apasă „Obține semnal” pentru verificarea accesului.",
+    },
+    "btn.get_signal": {
+        "en": "Get signal","ru": "Получить сигнал","hi": "सिग्नल प्राप्त करें","ar": "الحصول على الإشارة","es": "Obtener señal","fr": "Obtenir le signal","ro": "Obține semnal",
+    },
+    "btn.vip_signals": {
+        "en": "VIP signals","ru": "VIP сигналы","hi": "VIP सिग्नल","ar": "إشارات VIP","es": "Señales VIP","fr": "Signaux VIP","ro": "Semnale VIP",
+    },
+    "btn.support": {"en":"Support","ru":"Поддержка","hi":"सपोर्ट","ar":"الدعم","es":"Soporte","fr":"Support","ro":"Asistență"},
+    "btn.back_menu": {"en":"⬅️ Menu","ru":"⬅️ В меню","hi":"⬅️ मेनू","ar":"⬅️ القائمة","es":"⬅️ Menú","fr":"⬅️ Menu","ro":"⬅️ Meniu"},
 }
 
 def t(lang: str, key: str) -> str:
-    lang = lang if lang in SUPPORTED_LANGS else "ru"
+    lang = lang if lang in SUPPORTED_LANGS else "en"
     bucket = _text_cache.get(lang) or {}
-    return bucket.get(key) or DEFAULT_TEXTS.get(key, {}).get(lang, key)
+    val = bucket.get(key) or DEFAULT_TEXTS.get(key, {}).get(lang) \
+          or DEFAULT_TEXTS.get(key, {}).get("en") or DEFAULT_TEXTS.get(key, {}).get("ru") or key
+    return val
 
 # ==== DB helpers ====
 async def ensure_db():
@@ -102,20 +117,25 @@ async def update_last_bot_message_id(tg_id: int, message_id: Optional[int]):
 
 # ==== Keyboards ====
 def kb_language() -> InlineKeyboardMarkup:
+    # 4 + 3 на две строки
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="🇷🇺 Русский", callback_data="lang:ru"),
             InlineKeyboardButton(text="🇬🇧 English", callback_data="lang:en"),
         ],
         [
-            InlineKeyboardButton(text="🇪🇸 Español", callback_data="lang:es"),
-            InlineKeyboardButton(text="🇺🇦 Українська", callback_data="lang:uk"),
+            InlineKeyboardButton(text="🇷🇺 Русский",  callback_data="lang:ru"),
+            InlineKeyboardButton(text="🇮🇳 हिन्दी",    callback_data="lang:hi"),
+            InlineKeyboardButton(text="🇦🇪 العربية",  callback_data="lang:ar"),
+        ],
+        [
+            InlineKeyboardButton(text="🇪🇸 Español",  callback_data="lang:es"),
+            InlineKeyboardButton(text="🇫🇷 Français", callback_data="lang:fr"),
+            InlineKeyboardButton(text="🇷🇴 Română",   callback_data="lang:ro"),
         ],
     ])
 
 # ==== One-window with image (для экрана выбора языка) ====
 async def send_window_with_image(bot: Bot, m: Message, caption_html: str, reply_markup: InlineKeyboardMarkup, image_name: str):
-    # удалить прошлое сообщение бота, если было
     last_id = None
     async with async_session() as session:
         user = await session.get(User, m.from_user.id)
@@ -136,7 +156,6 @@ async def send_window_with_image(bot: Bot, m: Message, caption_html: str, reply_
         except Exception:
             pass
 
-    # fallback — просто текст
     sent = await m.answer(caption_html, reply_markup=reply_markup)
     await update_last_bot_message_id(m.from_user.id, sent.message_id)
 
@@ -145,7 +164,6 @@ async def send_window_with_image(bot: Bot, m: Message, caption_html: str, reply_
 async def cmd_start(message: Message):
     logging.info("CMD /start from %s", message.from_user.id)
 
-    # deep link ref
     ref_code = None
     if message.text:
         parts = message.text.split(maxsplit=1)
@@ -154,16 +172,13 @@ async def cmd_start(message: Message):
 
     user = await get_or_create_user(message.from_user.id, ref_code=ref_code)
 
-    # если язык уже выбран — сразу главное меню
     if user.lang:
         await menu.render_main_menu(message, user.lang, vip=user.has_vip)
         return
 
-    # иначе — экран выбора языка
     await send_window_with_image(
-        message.bot,
-        message,
-        caption_html=t("ru", "screen.language.title"),
+        message.bot, message,
+        caption_html=t("en", "screen.language.title"),
         reply_markup=kb_language(),
         image_name="language.jpg",
     )
@@ -177,9 +192,8 @@ async def on_go_lang(call: CallbackQuery):
     await update_last_bot_message_id(call.from_user.id, None)
 
     await send_window_with_image(
-        call.message.bot,
-        call.message,
-        caption_html=t("ru", "screen.language.title"),
+        call.message.bot, call.message,
+        caption_html=t("en", "screen.language.title"),
         reply_markup=kb_language(),
         image_name="language.jpg",
     )
@@ -226,7 +240,7 @@ async def menu_get(call: CallbackQuery):
         user = await session.get(User, call.from_user.id)
 
         decision = decide_next_step(user)
-        lang = user.lang if user.lang in SUPPORTED_LANGS else "ru"
+        lang = user.lang if user.lang in SUPPORTED_LANGS else "en"
 
         if decision.step == "subscription":
             await call.answer()
@@ -252,25 +266,15 @@ async def menu_get(call: CallbackQuery):
             await call.answer()
             await checks.show_access_ok(call)
             return
+
+        # === ВАЖНО: вместо отправки второго меню — рисуем сразу красивое главное меню ===
         if decision.step in ("open_vip", "open_regular"):
-            vip = (decision.step == "open_vip")
             await call.answer()
-            text = f"<b>{t(lang, 'screen.menu.title')}</b>\n\n{t(lang, 'screen.menu.desc')}"
-            try:
-                await call.message.delete()
-            except Exception:
-                pass
-            sent = await call.message.answer(
-                text,
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(
-                        text=(DEFAULT_TEXTS["btn.vip_signals"]["ru"] if vip else DEFAULT_TEXTS["btn.get_signal"]["ru"]),
-                        url=(settings.MINIAPP_LINK_VIP if vip else settings.MINIAPP_LINK_REGULAR)
-                    )],
-                    [InlineKeyboardButton(text=t(lang, "btn.back_menu"), callback_data="go:menu")],
-                ])
+            await menu.render_main_menu(
+                call.message,
+                lang,
+                vip=(decision.step == "open_vip")
             )
-            await update_last_bot_message_id(call.from_user.id, sent.message_id)
             return
 
     await call.answer("Попробуйте ещё раз.", show_alert=False)
@@ -286,19 +290,15 @@ async def main():
     )
     dp = Dispatcher(storage=MemoryStorage())
 
-    # Лёгкий логгер входящих сообщений (функция-middleware)
     from aiogram import types
-
     @dp.update.outer_middleware()
     async def log_all(handler, event, data):
         if isinstance(event, types.Message):
             logging.info("MSG: %r", event.text)
         return await handler(event, data)
 
-    # HTTP сервер постбэков
     asyncio.create_task(start_postback_server(bot))
 
-    # ВАЖНО: наш локальный роутер с /start — ПЕРВЫМ
     dp.include_router(router)
     dp.include_router(common.router)
     dp.include_router(menu.router)

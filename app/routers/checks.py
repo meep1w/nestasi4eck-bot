@@ -23,7 +23,7 @@ router = Router(name=__name__)
 # === I18N ===
 I18N_DIR = Path(__file__).resolve().parents[1] / "assets" / "i18n"
 IMG_DIR = Path(__file__).resolve().parents[1] / "assets" / "images"
-SUPPORTED_LANGS = ("ru", "en", "es", "uk")
+SUPPORTED_LANGS = ("en", "ru", "hi", "ar", "es", "fr", "ro")
 _text_cache = {code: load_lang(code, I18N_DIR) for code in SUPPORTED_LANGS}
 
 DEFAULT_TEXTS = {
@@ -98,6 +98,9 @@ DEFAULT_TEXTS = {
             "5) 📡 Натисніть «Отримати сигнал» — бот сам перевірить і відкриє міні-ап\n\n"
             "Перевірки автоматичні. Якщо щось не відкривається — спробуйте ще раз."
         ),
+
+
+
     },
     # Кнопки
     "btn.register": {"ru": "📝 Зарегистрироваться","en": "📝 Register","es": "📝 Registrarme","uk": "📝 Зареєструватися"},
@@ -108,6 +111,8 @@ DEFAULT_TEXTS = {
     "btn.vip_signals": {"ru": "👑 VIP сигналы","en": "👑 VIP signals","es": "👑 Señales VIP","uk": "👑 VIP сигнали"},
     "btn.back_menu": {"ru": "⬅️ Вернуться в главное меню","en": "⬅️ Back to Menu","es": "⬅️ Volver al menú","uk": "⬅️ Повернутися в меню"},
 }
+
+
 
 def t(lang: str, key: str, **fmt) -> str:
     lang = lang if lang in SUPPORTED_LANGS else "ru"

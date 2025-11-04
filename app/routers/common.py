@@ -16,70 +16,55 @@ from app.services.i18n import load_lang
 
 router = Router(name=__name__)
 
-# ==== I18N ====
 I18N_DIR = Path(__file__).resolve().parents[1] / "assets" / "i18n"
-SUPPORTED_LANGS = ("ru", "en", "es", "uk")
+
+# РОВНО 6 ЯЗЫКОВ
+SUPPORTED_LANGS = ("en", "ru", "hi", "ar", "es", "fr")
 _text_cache = {code: load_lang(code, I18N_DIR) for code in SUPPORTED_LANGS}
 
 DEFAULT_TEXTS = {
     "screen.language.title": {
-        "ru": "Выберите язык",
         "en": "Choose language",
+        "ru": "Выберите язык",
+        "hi": "भाषा चुनें",
+        "ar": "اختر اللغة",
         "es": "Elige idioma",
-        "uk": "Обери мову",
+        "fr": "Choisissez la langue",
+        "ro": "Alege limba"
     },
-    "screen.menu.title": {
-        "ru": "Главное меню",
-        "en": "Main menu",
-        "es": "Menú principal",
-        "uk": "Головне меню",
-    },
+    "screen.menu.title": {"en": "Main menu","ru": "Главное меню","hi":"मुख्य मेनू","ar":"القائمة الرئيسية","es":"Menú principal","fr":"Menu principal", "ro": "Meniu principal"},
     "screen.menu.desc": {
-        "ru": "Нажмите «Получить сигнал», чтобы пройти проверку доступа.",
         "en": "Tap “Get signal” to pass access checks.",
+        "ru": "Нажмите «Получить сигнал», чтобы пройти проверку доступа.",
+        "hi": "पहुँच जाँच पार करने के लिए “सिग्नल प्राप्त करें” दबाएँ।",
+        "ar": "اضغط «الحصول على الإشارة» لاجتياز فحوصات الوصول.",
         "es": "Pulsa “Obtener señal” para pasar las comprobaciones.",
-        "uk": "Натисніть “Отримати сигнал”, щоб пройти перевірки доступу.",
+        "fr": "Appuyez sur « Obtenir le signal » pour passer les vérifications d’accès.",
+        "ro": "Apasă „Obține semnal” pentru verificarea accesului."
     },
-    "btn.get_signal": {
-        "ru": "Получить сигнал",
-        "en": "Get signal",
-        "es": "Obtener señal",
-        "uk": "Отримати сигнал",
-    },
-    "btn.vip_signals": {
-        "ru": "VIP сигналы",
-        "en": "VIP signals",
-        "es": "Señales VIP",
-        "uk": "VIP сигнали",
-    },
-    "btn.support": {
-        "ru": "Поддержка",
-        "en": "Support",
-        "es": "Soporte",
-        "uk": "Підтримка",
-    },
-    "btn.back_menu": {
-        "ru": "⬅️ В меню",
-        "en": "⬅️ Menu",
-        "es": "⬅️ Menú",
-        "uk": "⬅️ Меню",
-    },
+    "btn.get_signal": {"en":"Get signal","ru":"Получить сигнал","hi":"सिग्नल प्राप्त करें","ar":"الحصول على الإشارة","es":"Obtener señal","fr":"Obtenir le signal", "ro": "Obține semnal"},
+    "btn.support": {"en":"Support","ru":"Поддержка","hi":"सपोर्ट","ar":"الدعم","es":"Soporte","fr":"Support","ro": "Asistență"},
     "help.text": {
-        "ru": "Команды:\n/lang — смена языка\n/menu — открыть главное меню\n/help — помощь",
         "en": "Commands:\n/lang — change language\n/menu — open main menu\n/help — help",
+        "ru": "Команды:\n/lang — смена языка\n/menu — открыть главное меню\n/help — помощь",
+        "hi": "Commands:\n/lang — भाषा बदलें\n/menu — मुख्य меню\n/help — помощь",
+        "ar": "Commands:\n/lang — تغيير اللغة\n/menu — القائمة الرئيسية\n/help — help",
         "es": "Comandos:\n/lang — cambiar idioma\n/menu — abrir menú principal\n/help — ayuda",
-        "uk": "Команди:\n/lang — змінити мову\n/menu — відкрити головне меню\n/help — допомога",
+        "fr": "Commandes :\n/lang — changer la langue\n/menu — ouvrir le menu\n/help — aide",
+        "ro": "Comenzi:\n/lang — schimbă limba\n/menu — deschide meniul principal\n/help — ajutor",
     },
 }
 
 
 def t(lang: str, key: str) -> str:
-    lang = lang if lang in SUPPORTED_LANGS else "ru"
+    lang = lang if lang in SUPPORTED_LANGS else "en"
     bucket = _text_cache.get(lang) or {}
-    if key in bucket and bucket[key]:
-        return bucket[key]
-    return DEFAULT_TEXTS.get(key, {}).get(lang, key)
-
+    val = bucket.get(key)
+    if not val:
+        val = DEFAULT_TEXTS.get(key, {}).get(lang)
+    if not val:
+        val = DEFAULT_TEXTS.get(key, {}).get("en") or DEFAULT_TEXTS.get(key, {}).get("ru") or key
+    return val
 
 # ==== БАЗОВЫЕ УТИЛИТЫ ====
 async def get_or_create_user(tg_id: int, lang: Optional[str] = None) -> User:
@@ -98,12 +83,10 @@ async def get_or_create_user(tg_id: int, lang: Optional[str] = None) -> User:
                 await session.commit()
         return user
 
-
 async def get_user_lang(tg_id: int) -> str:
     async with async_session() as session:
         user = await session.get(User, tg_id)
-        return user.lang if user and user.lang in SUPPORTED_LANGS else "ru"
-
+        return user.lang if user and user.lang in SUPPORTED_LANGS else "en"
 
 async def update_last_bot_message_id(tg_id: int, message_id: Optional[int]):
     async with async_session() as session:
@@ -113,28 +96,31 @@ async def update_last_bot_message_id(tg_id: int, message_id: Optional[int]):
         user.last_bot_message_id = message_id
         await session.commit()
 
-
 # ==== КЛАВИАТУРЫ ====
 def kb_language() -> InlineKeyboardMarkup:
+    # 4 + 3 на две строки
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="🇷🇺 Русский", callback_data="common:lang:ru"),
-            InlineKeyboardButton(text="🇬🇧 English", callback_data="common:lang:en"),
+            InlineKeyboardButton(text="🇬🇧 English", callback_data="lang:en"),
         ],
         [
-            InlineKeyboardButton(text="🇪🇸 Español", callback_data="common:lang:es"),
-            InlineKeyboardButton(text="🇺🇦 Українська", callback_data="common:lang:uk"),
+            InlineKeyboardButton(text="🇷🇺 Русский",  callback_data="lang:ru"),
+            InlineKeyboardButton(text="🇮🇳 हिन्दी",    callback_data="lang:hi"),
+            InlineKeyboardButton(text="🇦🇪 العربية",  callback_data="lang:ar"),
+        ],
+        [
+            InlineKeyboardButton(text="🇪🇸 Español",  callback_data="lang:es"),
+            InlineKeyboardButton(text="🇫🇷 Français", callback_data="lang:fr"),
+            InlineKeyboardButton(text="🇷🇴 Română",   callback_data="lang:ro"),
         ],
     ])
 
-
 def kb_main(lang: str, vip: bool = False) -> InlineKeyboardMarkup:
-    btn_label = t(lang, "btn.vip_signals") if vip else t(lang, "btn.get_signal")
+    btn_label = t(lang, "btn.get_signal")
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=btn_label, callback_data="menu:get")],
         [InlineKeyboardButton(text=t(lang, "btn.support"), url="https://t.me/")],
     ])
-
 
 # ==== HELP / LANG / MENU ====
 @router.message(Command("help"))
@@ -142,10 +128,8 @@ async def cmd_help(m: Message):
     lang = await get_user_lang(m.from_user.id)
     await m.answer(t(lang, "help.text"))
 
-
 @router.message(Command("lang"))
 async def cmd_lang(m: Message):
-    # показать окно выбора языка (с удалением предыдущего бот-сообщения, если было)
     last_id = None
     async with async_session() as session:
         user = await session.get(User, m.from_user.id)
@@ -159,16 +143,14 @@ async def cmd_lang(m: Message):
         except Exception:
             pass
 
-    sent = await m.answer(t("ru", "screen.language.title"), reply_markup=kb_language())
+    sent = await m.answer(t("en", "screen.language.title"), reply_markup=kb_language())
     await update_last_bot_message_id(m.from_user.id, sent.message_id)
-
 
 @router.callback_query(F.data.startswith("common:lang:"))
 async def on_lang_pick(call: CallbackQuery):
     lang = call.data.split(":", 2)[2]
     await get_or_create_user(call.from_user.id, lang=lang)
 
-    # удалим сообщение выбора языка
     try:
         await call.message.delete()
     except Exception:
@@ -180,12 +162,10 @@ async def on_lang_pick(call: CallbackQuery):
     await update_last_bot_message_id(call.from_user.id, sent.message_id)
     await call.answer()
 
-
 @router.message(Command("menu"))
 async def cmd_menu(m: Message):
     lang = await get_user_lang(m.from_user.id)
 
-    # Удалим предыдущее окно бота, если есть
     last_id = None
     async with async_session() as session:
         user = await session.get(User, m.from_user.id)
